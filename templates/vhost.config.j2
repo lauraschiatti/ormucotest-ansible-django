@@ -1,0 +1,19 @@
+<VirtualHost *:80>
+
+    <Directory {{ project_path }}/{{ project_name }}>
+			Require all granted
+		</Directory>
+
+    Alias /static {{ static_root }}
+		<Directory {{ static_root }}>
+			Order allow,deny
+			Allow from all
+		</Directory>
+
+    WSGIScriptAlias / {{ project_path }}/{{ project_name }}/{{ project_name }}.wsgi
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>

@@ -1,0 +1,20 @@
+---
+
+project_name: ormucotest
+
+project_path: /var/www/html/ormucotest
+
+repo: https://github.com/lauricdd/ormucotest.git
+
+static_root: "{{ project_path }}/static"
+
+virtualenv_path: "{{ project_path }}/env"
+
+ubuntu_packages:
+  - python3-pip
+  - apache2
+  - libapache2-mod-wsgi-py3
+
+pip_packages:
+  - virtualenv
+  - django

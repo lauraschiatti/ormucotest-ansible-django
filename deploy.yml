@@ -1,0 +1,81 @@
+---
+- hosts: webservers
+  remote_user: root
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Update all packages to the latest version
+      apt:
+        update_cache: yes
+
+    - name: Install ubuntu packages
+      apt:
+        pkg: "{{ item }}"
+      with_items: "{{ ubuntu_packages }}"
+
+    - name: Install python packages
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - "{{ pip_packages }}"
+
+    - name: Clone git repository
+      git:
+        repo: "{{ repo }}"
+        dest: "{{ project_path }}"
+        update: no
+
+    - name: Create virtualenv
+      shell: virtualenv "{{ virtualenv_path }}"
+
+    # Adjust project settings
+    - name: Set static files directory
+      lineinfile:
+        dest: "{{ project_path }}/{{ project_name }}/settings.py"
+        regexp: "STATICFILES_DIRS"
+        line: "STATIC_ROOT"
+        state: present
+
+    # Configure php
+    - name: Configure php
+      copy:
+        src: files/dir.conf
+        dest: /etc/apache2/mods-enabled/dir.conf
+
+    - name: Set index.php
+      copy:
+        src: files/index.php
+        dest: /var/www/html/info.php
+
+    # Configure apache
+    - name: Enable Apache mod_rewrite
+      apache2_module:
+        name: rewrite
+        state: present
+
+    - name: Enabled Apache mod_wsgi
+      apache2_module:
+        name: wsgi
+        state: present
+
+    - name: Apache wsgi Config
+      template:
+        src: templates/wsgi.j2
+        dest: "{{ project_path }}/{{ project_name }}/{{ project_name }}.wsgi"
+
+    - name: Create virtual host file
+      template:
+        src: templates/vhost.config.j2
+        dest: /etc/apache2/sites-available/{{ project_name }}.conf
+
+    - name: Enable this newly created {{ project_name }}.conf file
+      command: a2ensite {{ project_name }}
+
+    - name: Disable default virtual host file
+      command: a2dissite 000-default
+
+    - service:
+        name: apache2
+        state: restarted
